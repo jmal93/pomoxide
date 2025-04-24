@@ -28,9 +28,20 @@ fn main() {
 }
 
 fn convert_time(time: String) -> u64 {
-    if let Some(pos) = time.find('s') {
-        time[..pos].parse().unwrap()
-    } else {
-        panic!("Formato de tempo inválido");
+    let mut total_seconds = 0;
+    let mut current_number = 0;
+
+    for c in time.chars() {
+        if c.is_ascii_digit() {
+            current_number = current_number * 10 + c.to_digit(10).unwrap() as u64;
+        } else if c == 'm' {
+            total_seconds += 60 * current_number;
+            current_number = 0;
+        } else if c == 's' {
+            total_seconds += current_number;
+            current_number = 0;
+        }
     }
+
+    total_seconds
 }
