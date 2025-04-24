@@ -12,7 +12,13 @@ struct Cli {
 
 fn main() {
     let args = Cli::parse();
-    let time = convert_time(args.time);
+    let time = match convert_time(args.time) {
+        Ok(t) => t,
+        Err(error) => {
+            eprint!("Erro ao converter tempo:\n{}", error);
+            std::process::exit(1);
+        }
+    };
 
     let bar = Arc::new(Mutex::new(ProgressBar::new(time)));
 
@@ -34,7 +40,7 @@ fn main() {
     drop(guard1);
 }
 
-fn convert_time(time: String) -> u64 {
+fn convert_time(time: String) -> Result<u64, String> {
     let mut total_seconds = 0;
     let mut current_number = 0;
 
@@ -47,8 +53,10 @@ fn convert_time(time: String) -> u64 {
         } else if c == 's' {
             total_seconds += current_number;
             current_number = 0;
+        } else {
+            return Err(format!("Caractere inválido: '{}'\n", c));
         }
     }
 
-    total_seconds
+    Ok(total_seconds + current_number)
 }
