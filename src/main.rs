@@ -1,6 +1,7 @@
 use chrono::TimeDelta;
 use clap::Parser;
 use indicatif::ProgressBar;
+use std::sync::{Arc, Mutex};
 use std::{thread, time::Duration};
 use timer::Timer;
 
@@ -13,16 +14,22 @@ fn main() {
     let args = Cli::parse();
     let time = convert_time(args.time);
 
-    let bar = ProgressBar::new(time);
+    let bar = Arc::new(Mutex::new(ProgressBar::new(time)));
 
     let timer = Timer::new();
     let duration = Duration::from_secs(1);
     let timedelta = TimeDelta::from_std(duration).unwrap();
+
+    let bar_clone = Arc::clone(&bar);
     let guard1 = timer.schedule_repeating(timedelta, move || {
-        bar.inc(1);
+        bar_clone.lock().unwrap().inc(1);
     });
 
     thread::sleep(Duration::from_secs(time));
+
+    bar.lock()
+        .unwrap()
+        .finish_with_message("Pomodoro concluído!");
 
     drop(guard1);
 }
