@@ -1,4 +1,4 @@
-use clap::{Parser, Subcommand};
+pub use clap::{Parser, Subcommand};
 
 #[derive(Debug, Parser, PartialEq)]
 #[command(name = "Pomoxide")]
