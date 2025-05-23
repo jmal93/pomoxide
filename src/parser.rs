@@ -1,3 +1,5 @@
+use std::{fmt::format, u64};
+
 pub use clap::{Parser, Subcommand};
 
 #[derive(Debug, Parser, PartialEq)]
@@ -10,14 +12,18 @@ pub struct Cli {
 #[derive(Subcommand, Debug, PartialEq)]
 pub enum Command {
     Start {
-        #[arg(long, default_value_t = String::from("25m"))]
-        duration: String,
+        #[arg(long, default_value_t = 25 * 60, value_parser = convert_time)]
+        duration: u64,
     },
     Finish,
     Clear,
 }
 
-pub fn convert_time(s: &str) -> Result<u64, &str> {
+pub fn convert_time(s: &str) -> Result<u64, String> {
+    if let Ok(seconds) = s.parse::<u64>() {
+        return Ok(seconds);
+    }
+
     let mut total_seconds: u64 = 0;
     let mut current_value = String::new();
     let mut has_minutes: bool = false;
@@ -29,11 +35,11 @@ pub fn convert_time(s: &str) -> Result<u64, &str> {
             '0'..'9' => current_value.push(c),
             'm' => {
                 if current_value.is_empty() {
-                    return Err("Value missing for minutes");
+                    return Err("Value missing for minutes".to_string());
                 }
                 total_seconds += current_value.parse::<u64>().unwrap() * 60;
                 if last_digit == 's' {
-                    return Err("Wrong format, minutes must come before seconds");
+                    return Err("Wrong format, minutes must come before seconds".to_string());
                 }
                 last_digit = c;
                 has_minutes = true;
@@ -41,23 +47,23 @@ pub fn convert_time(s: &str) -> Result<u64, &str> {
             }
             's' => {
                 if current_value.is_empty() {
-                    return Err("Value missing for seconds");
+                    return Err("Value missing for seconds".to_string());
                 }
                 let seconds = current_value.parse::<u64>().unwrap();
                 if seconds >= 60 {
-                    return Err("Max value for seconds must be 59");
+                    return Err("Max value for seconds must be 59".to_string());
                 }
                 total_seconds += seconds;
                 last_digit = c;
                 has_seconds = true;
                 current_value.clear();
             }
-            _ => return Err("Character not valid"),
+            _ => return Err(format!("Character not valid: {}", c)),
         };
     }
 
     if !current_value.is_empty() && !has_seconds && !has_minutes {
-        return Err("Timestamps not specified");
+        return Err("Timestamps not specified".to_string());
     }
     Ok(total_seconds)
 }
@@ -74,7 +80,7 @@ mod tests {
         assert_eq!(
             cli.command,
             Command::Start {
-                duration: String::from("25m")
+                duration: 25* 60
             }
         );
     }
@@ -87,7 +93,7 @@ mod tests {
         assert_eq!(
             cli.command,
             Command::Start {
-                duration: String::from("10m")
+                duration: 10 * 60
             }
         );
     }
@@ -109,6 +115,11 @@ mod tests {
     }
 
     #[test]
+    fn test_convert_time_accept_number() {
+        assert_eq!(convert_time("1500"), Ok(1500));
+    }
+
+    #[test]
     fn test_convert_time_10m() {
         assert_eq!(convert_time("10m"), Ok(600));
     }
@@ -125,52 +136,47 @@ mod tests {
 
     #[test]
     fn test_convert_time_a() {
-        assert_eq!(convert_time("a"), Err("Character not valid"));
-    }
-
-    #[test]
-    fn test_convert_time_10() {
-        assert_eq!(convert_time("10"), Err("Timestamps not specified"));
+        assert_eq!(convert_time("a"), Err("Character not valid: a".to_string()));
     }
 
     #[test]
     fn test_convert_time_10s10m() {
         assert_eq!(
             convert_time("10s10m"),
-            Err("Wrong format, minutes must come before seconds")
+            Err("Wrong format, minutes must come before seconds".to_string())
         );
     }
 
     #[test]
     fn test_convert_time_61s() {
-        assert_eq!(convert_time("61s"), Err("Max value for seconds must be 59"));
+        assert_eq!(convert_time("61s"), Err("Max value for seconds must be 59".to_string()));
     }
 
     #[test]
     fn test_convert_time_10m61s() {
         assert_eq!(
             convert_time("10m61s"),
-            Err("Max value for seconds must be 59")
+            Err("Max value for seconds must be 59".to_string())
         );
     }
 
     #[test]
     fn test_convert_time_m() {
-        assert_eq!(convert_time("m"), Err("Value missing for minutes"));
+        assert_eq!(convert_time("m"), Err("Value missing for minutes".to_string()));
     }
 
     #[test]
     fn test_convert_time_m10s() {
-        assert_eq!(convert_time("m10s"), Err("Value missing for minutes"));
+        assert_eq!(convert_time("m10s"), Err("Value missing for minutes".to_string()));
     }
 
     #[test]
     fn test_convert_time_s() {
-        assert_eq!(convert_time("s"), Err("Value missing for seconds"));
+        assert_eq!(convert_time("s"), Err("Value missing for seconds".to_string()));
     }
 
     #[test]
     fn test_convert_time_10ms() {
-        assert_eq!(convert_time("10ms"), Err("Value missing for seconds"));
+        assert_eq!(convert_time("10ms"), Err("Value missing for seconds".to_string()));
     }
 }
