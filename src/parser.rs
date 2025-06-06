@@ -1,4 +1,4 @@
-use std::{fmt::format, u64};
+use std::u64;
 
 pub use clap::{Parser, Subcommand};
 
