@@ -12,11 +12,8 @@ fn main() {
             println!("Começou um pomodoro de {duration}");
             start_bar(duration);
         }
-        Command::Finish => {
-            println!("Terminou o pomodoro atual");
-        }
-        Command::Clear => {
-            println!("Limpou o pomodoro atual");
+        Command::Break => {
+            println!("Começou o descanso");
         }
     }
 }

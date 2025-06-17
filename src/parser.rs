@@ -15,8 +15,10 @@ pub enum Command {
         #[arg(long, default_value_t = 25 * 60, value_parser = convert_time)]
         duration: u64,
     },
-    Finish,
-    Clear,
+    Break {
+        #[arg(long, default_value_t = 5 * 60, value_parser = convert_time)]
+        duration: u64,
+    },
 }
 
 pub fn convert_time(s: &str) -> Result<u64, String> {
@@ -77,12 +79,7 @@ mod tests {
         let args = ["pomoxide", "start"];
         let cli = Cli::try_parse_from(args).unwrap();
 
-        assert_eq!(
-            cli.command,
-            Command::Start {
-                duration: 25* 60
-            }
-        );
+        assert_eq!(cli.command, Command::Start { duration: 25 * 60 });
     }
 
     #[test]
@@ -90,28 +87,15 @@ mod tests {
         let args = ["pomoxide", "start", "--duration", "10m"];
         let cli = Cli::try_parse_from(args).unwrap();
 
-        assert_eq!(
-            cli.command,
-            Command::Start {
-                duration: 10 * 60
-            }
-        );
+        assert_eq!(cli.command, Command::Start { duration: 10 * 60 });
     }
 
     #[test]
-    fn test_cli_parser_finish() {
-        let args = ["pomoxide", "finish"];
+    fn test_cli_parser_break() {
+        let args = ["pomoxide", "break"];
         let cli = Cli::try_parse_from(args).unwrap();
 
-        assert_eq!(cli.command, Command::Finish);
-    }
-
-    #[test]
-    fn test_cli_parser_clear() {
-        let args = ["pomoxide", "clear"];
-        let cli = Cli::try_parse_from(args).unwrap();
-
-        assert_eq!(cli.command, Command::Clear);
+        assert_eq!(cli.command, Command::Break { duration: 5 * 60 });
     }
 
     #[test]
@@ -149,7 +133,10 @@ mod tests {
 
     #[test]
     fn test_convert_time_61s() {
-        assert_eq!(convert_time("61s"), Err("Max value for seconds must be 59".to_string()));
+        assert_eq!(
+            convert_time("61s"),
+            Err("Max value for seconds must be 59".to_string())
+        );
     }
 
     #[test]
@@ -162,21 +149,33 @@ mod tests {
 
     #[test]
     fn test_convert_time_m() {
-        assert_eq!(convert_time("m"), Err("Value missing for minutes".to_string()));
+        assert_eq!(
+            convert_time("m"),
+            Err("Value missing for minutes".to_string())
+        );
     }
 
     #[test]
     fn test_convert_time_m10s() {
-        assert_eq!(convert_time("m10s"), Err("Value missing for minutes".to_string()));
+        assert_eq!(
+            convert_time("m10s"),
+            Err("Value missing for minutes".to_string())
+        );
     }
 
     #[test]
     fn test_convert_time_s() {
-        assert_eq!(convert_time("s"), Err("Value missing for seconds".to_string()));
+        assert_eq!(
+            convert_time("s"),
+            Err("Value missing for seconds".to_string())
+        );
     }
 
     #[test]
     fn test_convert_time_10ms() {
-        assert_eq!(convert_time("10ms"), Err("Value missing for seconds".to_string()));
+        assert_eq!(
+            convert_time("10ms"),
+            Err("Value missing for seconds".to_string())
+        );
     }
 }
